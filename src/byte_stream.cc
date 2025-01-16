@@ -45,7 +45,17 @@ string_view Reader::peek() const
 
 void Reader::pop( uint64_t len )
 {
-   
+   if(is_closed_){
+      std::cerr << "ERROR: Cannot read" << std::endl;
+      return;
+   }
+   if(stream.empty()){
+      std::cerr << "ERROR: Nothing to read. Stream is empty." << std::endl;
+      return;
+   }
+   uint64_t can_pop = std::min(len, stream.size());
+   stream.erase(stream.begin(), stream.begin() + can_pop);
+   total_bytes_popped += can_pop;
 }
 
 bool Reader::is_finished() const
