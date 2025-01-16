@@ -4,13 +4,13 @@
 
 using namespace std;
 
-ByteStream::ByteStream( uint64_t capacity ) : capacity_( capacity ) {}
+ByteStream::ByteStream( uint64_t capacity ) : stream(), is_closed_(false), total_bytes_pushed(0), total_bytes_popped(0), capacity_(capacity), error_(false){}
 
 void Writer::push( string data )
 {
   uint64_t available_space = capacity_ - stream.size();
   uint64_t available_write = std::min(available_space, data.size());
-  if(is_closed || available_space == 0){
+  if(is_closed_ || available_space == 0){
     std::cerr << "ERROR: Writer is closed" << std::endl;
     return;
   }
