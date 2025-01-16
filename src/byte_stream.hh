@@ -26,7 +26,7 @@ public:
 protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
   std::vector<char> stream; //using char since it is single byte 
-  bool is_closed = false; 
+  bool is_closed_ = false; 
   uint64_t total_bytes_pushed = 0;
   uint64_t total_bytes_popped = 0;
   uint64_t capacity_;
