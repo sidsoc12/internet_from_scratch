@@ -25,41 +25,41 @@ void Writer::close()
 
 bool Writer::is_closed() const
 {
-  return is_closed_; // Your code here.
+  return is_closed_; 
 }
 
 uint64_t Writer::available_capacity() const
 {
-  return capacity_ - stream.size(); // Your code here.
+  return capacity_ - stream.size(); 
 }
 
 uint64_t Writer::bytes_pushed() const
 {
-  return total_bytes_pushed; // Your code here.
+  return total_bytes_pushed; 
 }
 
 string_view Reader::peek() const
 {
-  return {stream.data(), stream.size()}; // Your code here.
+  return {stream.data(), stream.size()}; 
 }
 
 void Reader::pop( uint64_t len )
 {
-  (void)len; // Your code here.
+   e.
 }
 
 bool Reader::is_finished() const
 {
-  return {}; // Your code here.
+  
 }
 
 uint64_t Reader::bytes_buffered() const
 {
-  return {}; // Your code here.
+ 
 }
 
 uint64_t Reader::bytes_popped() const
 {
-  return {}; // Your code here.
+  return total_bytes_popped;
 }
 
