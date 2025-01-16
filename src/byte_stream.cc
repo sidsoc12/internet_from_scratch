@@ -55,7 +55,7 @@ bool Reader::is_finished() const
 
 uint64_t Reader::bytes_buffered() const
 {
- 
+  return stream.size();
 }
 
 uint64_t Reader::bytes_popped() const
