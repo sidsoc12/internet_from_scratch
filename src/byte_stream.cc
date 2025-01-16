@@ -30,7 +30,7 @@ bool Writer::is_closed() const
 
 uint64_t Writer::available_capacity() const
 {
-  return {}; // Your code here.
+  return capacity_ - stream.size(); // Your code here.
 }
 
 uint64_t Writer::bytes_pushed() const
