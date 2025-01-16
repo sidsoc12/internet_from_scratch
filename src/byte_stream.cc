@@ -45,12 +45,12 @@ string_view Reader::peek() const
 
 void Reader::pop( uint64_t len )
 {
-   e.
+   
 }
 
 bool Reader::is_finished() const
 {
-  
+  return is_closed_ && stream.empty(); 
 }
 
 uint64_t Reader::bytes_buffered() const
