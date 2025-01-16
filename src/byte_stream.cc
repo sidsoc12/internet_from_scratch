@@ -20,12 +20,12 @@ void Writer::push( string data )
 
 void Writer::close()
 {
-  is_closed = true;
+  is_closed_ = true;
 }
 
 bool Writer::is_closed() const
 {
-  return {}; // Your code here.
+  return is_closed_; // Your code here.
 }
 
 uint64_t Writer::available_capacity() const
