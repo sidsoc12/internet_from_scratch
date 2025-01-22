@@ -1,5 +1,6 @@
 #include "byte_stream.hh"
 #include <iostream>
+#include <map>
 
 using namespace std;
 
@@ -21,7 +22,7 @@ void Writer::push( string data )
     return;
   }
   stream.insert( stream.end(), data.begin(), data.begin() + available_write );
-  total_bytes_pushed += available_write;
+  total_bytes_pushed = available_write;
 }
 
 void Writer::close()
