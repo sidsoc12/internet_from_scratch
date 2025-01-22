@@ -9,9 +9,22 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     data = data.substr(0,next_index - first_index);
     first_index = next_index;
   }
-   
+
+  if(data.empty()){ // check for empty substring 
+    return;
+  }
+
+  // Condcut merge with existing buffer
+  
+  merge_start = first_index
+
 
   
+   
+  }
+
+
+
   if(first_index > next_index){ // regular push substring to buffer 
     reassembler_buffer[first_index] = data;
   }
