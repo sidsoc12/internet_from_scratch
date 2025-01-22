@@ -45,6 +45,6 @@ public:
 private:
   ByteStream output_;
   uint64_t next_index = 0;
-  std::map<uint64_t, std::string> reassembler_buffer;
+  std::map<uint64_t, std::string> reassembler_buffer; // the idea to use uint64_t instead of uint16_t was from a student on ED stem. 
   bool last_recieved = false;
 };
