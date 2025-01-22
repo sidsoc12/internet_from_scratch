@@ -5,11 +5,16 @@ using namespace std;
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
 {
-   if(first_index < next_index){ // need to trim initial overlap of substring
-      data = data.substr(0,next_index - first_index);
-      first_index = next_index;
-   }
+  if(first_index < next_index){ // need to trim initial overlap of substring
+    data = data.substr(0,next_index - first_index);
+    first_index = next_index;
+  }
    
+
+  
+  if(first_index > next_index){ // regular push substring to buffer 
+    reassembler_buffer[first_index] = data;
+  }
 
 }
 
