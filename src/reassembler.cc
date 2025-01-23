@@ -78,38 +78,21 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     reassembler_buffer.erase(next_index);
   }
 
+  // Close the bytestream if last recieved is true and all reassembler components have been emptied into stream 
   if(is_last_substring){
     last_recieved = true;
-    if(reassembler_buffer.empty()){
+    if(reassembler_buffer.empty() ){
       output_.writer().close();
     }
   }
-  
-
-
-
-
-
-
-
-
-
-  
-   
-  }
-
-
-
-  if(first_index > next_index){ // regular push substring to buffer 
-    reassembler_buffer[first_index] = data;
-  }
-
 }
-
 // How many bytes are stored in the Reassembler itself?
 // This function is for testing only; don't add extra state to support it.
 uint64_t Reassembler::count_bytes_pending() const
 {
-  debug( "unimplemented count_bytes_pending() called" );
-  return {};
+  uint64_t total = 0;
+  for (const auto& [index, data] : reassembler_buffer) {
+        total += data.size(); 
+  }
+  return total;
 }
