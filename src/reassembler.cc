@@ -14,6 +14,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     return;
   }
 
+  // capacity check #1
   uint64_t available_capacity = output_.writer().available_capacity();
   if(first_index >= next_index + available_capacity){ // data is entirely beyond capacity
     return;
@@ -38,6 +39,8 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     if(buff_start <= end && buff_end >= start){
       start = std::min(start, buff_start);
       end = std::max(end, buff_end);
+      // Here, I pad the data string with 0's so I can perform the replace operation later. 
+      merged_data = std::string(buff_start - start, '\0') + merged_data + std::string(end - buff_end, '\0');
       merged_data.replace(buff_start - start, it->second.size(), it->second);
       // Remove buffered sring 
       it = reassembler_buffer.erase(it);
@@ -46,6 +49,39 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
       break;
     }
   }
+
+  // At this point, we have a merged_data which represents the data we can now trim/modify/check before we keep it in the buffer or push it into the stream
+
+  // Do capacity check #2 (trim  bytes beyond capacity) 
+  if(start + merged_data.size() > next_index + available_capacity){
+    merged_data = merged_data.substr(0, next_index + available_capacity - start);
+  }
+
+  if (merged_data.empty()){
+    return; 
+  } 
+
+  // if merged_data is next_index, auto push to byte stream without needing to add it to the buffer
+  if(start == next_index){
+    output_.writer().push(merged_data);
+    next_index += merged_data.size();
+  }
+  else{
+    // Push merged_data to buffer if not the start
+    reassembler_buffer[start] = merged_data;
+  }
+
+  // Push next buffer item if starts with next_index
+  while(reassembler_buffer.count(next_index)){
+    output_.writer().push(reassembler_buffer[next_index]);
+    next_index += reassembler_buffer[next_index].size();
+    reassembler_buffer.erase(next_index);
+  }
+
+  
+  
+
+
 
 
 
