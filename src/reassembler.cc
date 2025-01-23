@@ -14,9 +14,18 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     return;
   }
 
-  // Condcut merge with existing buffer
+  uint64_t available_capacity = output_.writer().available_capacity();
+  if(first_index >= next_index + available_capacity){ // data is entirely beyond capacity
+    return;
+  }
   
-  merge_start = first_index
+
+
+  // Conduct merge with existing buffer
+  
+  uint64_t start = first_index;
+  uint64_t end = first_index + data.size();
+
 
 
   
