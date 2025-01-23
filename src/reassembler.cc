@@ -78,7 +78,12 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     reassembler_buffer.erase(next_index);
   }
 
-  
+  if(is_last_substring){
+    last_recieved = true;
+    if(reassembler_buffer.empty()){
+      output_.writer().close();
+    }
+  }
   
 
 
