@@ -2,6 +2,7 @@
 
 #include "byte_stream.hh"
 #include <map>
+#include <optional>
 
 class Reassembler
 {
@@ -43,8 +44,13 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
 private:
+  // ByteStream output_;
+  // uint64_t next_index = 0;
+  // std::map<uint64_t, std::string> reassembler_buffer; // the idea to use uint64_t instead of uint16_t was from a student on ED stem. 
+  // bool last_recieved = false;
+  // uint64_t last_substring_index = UINT64_MAX;
   ByteStream output_;
-  uint64_t next_index = 0;
-  std::map<uint64_t, std::string> reassembler_buffer; // the idea to use uint64_t instead of uint16_t was from a student on ED stem. 
-  bool last_recieved = false;
+  std::string buf_ {};
+  std::vector<bool> occupancy_ {};
+  std::optional<uint64_t> total_size_ {};
 };
