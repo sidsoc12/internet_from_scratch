@@ -5,11 +5,11 @@ My name: Sid Potti
 
 My SUNet ID: sidpotti
 
-I collaborated with: [list sunetids here]
+I collaborated with: Asher Hensley
 
 I would like to thank/reward these classmates for their help: [list sunetids here]
 
-This lab took me about [n] hours to do. I [did/did not] attend the lab session.
+This lab took me about 6 hours to do. I did attend the lab session.
 
 I was surprised by or edified to learn that: [describe]
 
@@ -44,6 +44,12 @@ alternatives -- perhaps in terms of simplicity/complexity, risk of
 bugs, asymptotic performance, empirical performance, required
 implementation time and difficulty, and other factors. Include any
 measurements if applicable.]
+
+My implementation of the Reassembler is structured to handle out-of-order data efficiently by using a std::map to store non-contiguous substrings, with the starting index of each substring as the key. This data structure allows me to maintain an ordered buffer and facilitates efficient merging of overlapping or adjacent substrings. During each insertion, I iterate over the map to find substrings that overlap with or are adjacent to the new data, and I merge them into a single, contiguous block if possible. Once merged, any contiguous data starting at the next expected index is pushed to the ByteStream.
+
+When designing the Reassembler, I considered alternatives like using a std::vector or a std::unordered_map. While these options offered potential performance benefits in specific scenarios, they introduced challenges in maintaining order and efficiently merging overlapping ranges. For example, a std::unordered_map would make range-based merging more complex, and a std::vector would require frequent sorting or reorganization, which could degrade performance for large buffers.
+
+The benefits of my design include simplicity in maintaining order and performing range-based operations, as well as avoiding the need for additional sorting or manual index tracking. However, a potential downside is that the use of std::map incurs a logarithmic overhead for insertions and lookups, which might be slower than the constant-time operations of a std::unordered_map in cases where merging is not required. Despite this, I found the trade-off to be worthwhile, as it simplifies the implementation and reduces the risk of bugs related to order and overlapping substrings.
 
 Implementation Challenges:
 []

@@ -30,7 +30,6 @@ int main( int argc, char* argv[] )
     }
 
     auto args = span( argv, argc );
-
     // The program takes two command-line arguments: the hostname and "path" part of the URL.
     // Print the usage message unless there are these two arguments (plus the program name
     // itself, so arg count = 3 in total).
