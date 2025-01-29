@@ -31,7 +31,7 @@ private:
   std::optional<Wrap32> ISN {};
   std::optional<Wrap32> ackno {}; 
   uint64_t checkpoint {0};
-  bool recieved_SYN {false};
+  bool received_SYN {false};
   bool received_FIN {false};
   bool rst{false};
   uint16_t window_size {0};
