@@ -1,15 +1,15 @@
 Checkpoint 2 Writeup
 ====================
 
-My name: [your name here]
+My name: Sid Potti
 
-My SUNet ID: [your sunetid here]
+My SUNet ID: sidpotti
 
 I collaborated with: [list sunetids here]
 
 I would like to thank/reward these classmates for their help: [list sunetids here]
 
-This lab took me about [n] hours to do. I [did/did not] attend the lab session.
+This lab took me about [9] hours to do. I did attend the lab session.
 
 Describe Wrap32 and TCPReceiver structure and design. [Describe data
 structures and approach taken. Describe alternative designs considered
@@ -19,13 +19,17 @@ of bugs, asymptotic performance, empirical performance, required
 implementation time and difficulty, and other factors. Include any
 measurements if applicable.]
 
+For the Wrap32 implementation, I designed a system that efficiently converts between 64-bit absolute sequence numbers and 32-bit wrapped sequence numbers, crucial for handling TCP’s sequence number wrapping. The wrap() function ensures a given absolute sequence number is correctly mapped to a relative sequence number based on the Initial Sequence Number (ISN). I encountered overflow/underflow issues when dealing with modular arithmetic, so I had to explicitly cast values to uint64_t and int64_t at key steps to prevent unexpected behavior due to implicit type conversions. My unwrap() implementation initially considered looping through all possible absolute sequence numbers by iterating through multiples of 2^32 , but this was inefficient. Instead, I developed an optimized O(1) approach by calculating the nearest absolute sequence number using integer division and modulo operations. I compute a base absolute sequence number, then determine the closest match by checking both the previous and next possible valid numbers relative to a given checkpoint. The logic ensures that unwrapping always produces the closest valid absolute sequence number, reducing complexity and significantly improving performance.
+
+For the TCPReceiver, my approach focused on efficiently handling incoming TCP segments, ensuring correctness in acknowledgment tracking, window size management, and stream reconstruction. A key challenge was handling a wide range of edge cases, particularly when SYN and FIN flags arrived without payloads, SYN+FIN were received together, or out-of-order segments needed to be properly managed. Furthermore, when a SYN arrives without a payload, the receiver must correctly initialize the stream while ensuring ackno is properly set. When a SYN+FIN segment is received together, the system must immediately close the stream while ensuring correct indexing. I also had to add the error handling functionality. When an RST flag is received, the receiver must immediately abort processing and set an error state in the underlying ByteStream. Instead of designing a highly generalized implementation that attempts to automatically handle all cases, I opted for a case-by-case approach, where I explicitly check for and handle each edge case individually. This decision was based on development speed and clarity, as debugging discrete conditions proved simpler than designing a fully generalized solution. However, in a future iteration, I would explore a more universal implementation that abstracts these cases into a single streamlined logic, ensuring automatic handling of most edge cases without requiring explicit condition checks. Additionally, I had to carefully manage acknowledgment number updates, ensuring that the next expected byte was always reflected in the ackno, properly incorporating both SYN and FIN bytes while avoiding premature updates.
+
 Implementation Challenges:
-[]
+Mentioned above. 
 
 Remaining Bugs:
-[]
+N/A
 
-- Optional: I had unexpected difficulty with: [describe]
+- Optional: I had unexpected difficulty with: Finding all of the edge cases. Some were easy to think of ahead of time, but others were quite difficult to find and think of. 
 
 - Optional: I think you could make this lab better by: [describe]
 
