@@ -8,6 +8,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
 {
   if(message.RST){ // handle RST 
     rst = true;
+    reader().set_error(); //set error 
     return;
   }
   if(!received_SYN && message.SYN){ // Check if there is a start sequence 
@@ -55,16 +56,11 @@ TCPReceiverMessage TCPReceiver::send() const
   uint16_t current_window_size = static_cast<uint16_t>(
         std::min(reassembler_.writer().available_capacity(), static_cast<size_t>(UINT16_MAX))
   );
-  if (reassembler_.writer().has_error()) {
-      return { std::nullopt, current_window_size, true }; 
+  bool send_rst = rst || reassembler_.writer().has_error(); 
+
+  if (!ackno) {
+        return { std::nullopt, current_window_size, send_rst };
   }
 
-  if (rst) {
-        return { std::nullopt, current_window_size, true };
-  }
-  if (!ackno) {
-        return { std::nullopt, current_window_size, false };
-  }
-  
-  return { ackno, current_window_size , false };
+  return { ackno, current_window_size, send_rst };
 }
