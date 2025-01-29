@@ -44,7 +44,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
       checkpoint -= 1;
   }
   ackno = *ISN + reassembler_.writer().bytes_pushed() + 1;
-  if (message.FIN && reassembler_.writer().bytes_pushed() == checkpoint) {
+  if (reassembler_.writer().is_closed()) {
       ackno = Wrap32(*ackno + 1); // FIN should only increase ackno when it can be assembled
   }
  //have to add 1 to add back the SYN byte
@@ -55,6 +55,10 @@ TCPReceiverMessage TCPReceiver::send() const
   uint16_t current_window_size = static_cast<uint16_t>(
         std::min(reassembler_.writer().available_capacity(), static_cast<size_t>(UINT16_MAX))
   );
+  if (reassembler_.writer().has_error()) {
+      return { std::nullopt, current_window_size, true }; 
+  }
+
   if (rst) {
         return { std::nullopt, current_window_size, true };
   }
