@@ -56,11 +56,5 @@ TCPReceiverMessage TCPReceiver::send() const
   uint16_t current_window_size = static_cast<uint16_t>(
         std::min(reassembler_.writer().available_capacity(), static_cast<size_t>(UINT16_MAX))
   );
-  bool send_rst = rst || reassembler_.writer().has_error(); 
-
-  if (!ackno) {
-        return { std::nullopt, current_window_size, send_rst };
-  }
-
-  return { ackno, current_window_size, send_rst };
+  return { !ackno ? std::nullopt : ackno , current_window_size, rst || reassembler_.writer().has_error() };
 }
