@@ -47,10 +47,8 @@ TCPReceiverMessage TCPReceiver::send() const
   if (rst) {
         return { std::nullopt, 0, true };
   }
-  // If no SYN was received, we have no valid ackno
   if (!ackno) {
         return { std::nullopt, 0, false };
   }
-  // Return stored values (no recomputation)
   return { ackno, window_size, false };
 }
