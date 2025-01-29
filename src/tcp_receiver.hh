@@ -32,6 +32,5 @@ private:
   std::optional<Wrap32> ackno {}; 
   uint64_t checkpoint {0};
   bool received_SYN {false};
-  bool received_FIN {false};
   bool rst{false};
 };

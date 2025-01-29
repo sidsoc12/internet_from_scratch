@@ -30,13 +30,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
   }
   // Steps for pushing data to reassembler 
   uint64_t absolute_seqn = message.seqno.unwrap(*ISN, checkpoint);
-  uint64_t reassembler_index = absolute_seqn - 1; // getting rid of SYN index
-  if (message.SYN && message.FIN && message.payload.empty()) {
-    reassembler_index = 0;  // Stream starts and ends at index 0
-  } else {
-    reassembler_index = absolute_seqn - 1;  // Normal case
-  }
-
+  uint64_t reassembler_index = (message.SYN ? 0 : absolute_seqn - 1);
   // insert into reassembler 
    // Debugging prints
   std::cout << "Absolute Seq: " << absolute_seqn 
@@ -44,12 +38,16 @@ void TCPReceiver::receive( TCPSenderMessage message )
             << ", FIN: " << message.FIN 
             << ", Payload Size: " << message.payload.size() << std::endl;
   reassembler_.insert(reassembler_index, message.payload, message.FIN);
-  checkpoint = reassembler_index + message.payload.size() - (message.FIN ? 1 : 0);
-  // Update FIN flag 
-  if(message.FIN){
-    received_FIN = true;
+  checkpoint = reassembler_index + message.payload.size();
+  // FIN without payload should NOT increment checkpoint
+  if (message.FIN && message.payload.empty() && !message.SYN) {
+      checkpoint -= 1;
   }
-  ackno = *ISN + checkpoint + (received_FIN ? 1 : 0) + 1; //have to add 1 to add back the SYN byte
+  ackno = *ISN + reassembler_.writer().bytes_pushed() + 1;
+  if (message.FIN && reassembler_.writer().bytes_pushed() == checkpoint) {
+      ackno = Wrap32(*ackno + 1); // FIN should only increase ackno when it can be assembled
+  }
+ //have to add 1 to add back the SYN byte
 }
 
 TCPReceiverMessage TCPReceiver::send() const
