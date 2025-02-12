@@ -27,8 +27,20 @@ void TCPSender::push( const TransmitFunction& transmit )
     transmit(msg);
     next_seqno += 1;
     bytes_unack += 1;
-    outstanding_segments
+    outstanding_segments.push_back(msg);
   }
+  
+  uint64_t available_window_size = window_size - bytes_unack; // how many bytes can we push to receiver
+  if(window_size == 0){ // handle window size = 0 case 
+    available_window_size = 1;
+  }
+
+  // Take all the packets of max MAX_PAYLOAD_SIZE out of buffer that we can
+  while( available_window_size > 0){
+    std::string payload = reader().read(std::min(available_window_size, static_cast<uint64_t>(TCPConfig::MAX_PAYLOAD_SIZE)));
+  }
+
+
 
 
 }
