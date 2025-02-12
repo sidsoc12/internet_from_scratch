@@ -36,10 +36,12 @@ void TCPSender::push( const TransmitFunction& transmit )
   uint64_t available_window_size = (window_size > bytes_unack) ? (window_size - bytes_unack) : 0; // how many bytes can we push to receiver
   // Take all the packets of max MAX_PAYLOAD_SIZE out of buffer that we can
   bool fin_set = false;
-  while( available_window_size > 0 && window_size != 0){
+  while( available_window_size > 0 && window_size != 0 && reader().bytes_buffered() > 0){
     uint64_t payload_size = std::min({available_window_size, TCPConfig::MAX_PAYLOAD_SIZE, reader().bytes_buffered()});
     std::string data = std::string(reader().peek().substr(0, payload_size));
-    reader().pop(payload_size);
+    if(payload_size > 0){
+      reader().pop(payload_size);
+    }
     TCPSenderMessage msg;
     msg.seqno = isn_.wrap(next_seqno, isn_);
     msg.payload = data;
@@ -66,7 +68,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     }
   }
   //handle case where FIN couldnt fit but we still need to send it
-  if (!fin_set && reader().is_finished()) {
+  if (!fin_set && reader().is_finished() && available_window_size > 0) {
         TCPSenderMessage fin_msg;
         fin_msg.seqno = isn_.wrap(next_seqno, isn_);
         fin_msg.FIN = true;
