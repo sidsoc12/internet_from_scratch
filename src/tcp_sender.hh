@@ -16,7 +16,7 @@ public:
     : input_( std::move(input) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms ), 
       window_size(1), outstanding_segments(), next_seqno(0), syn_sent_(false),
       bytes_unack(0), consecutive_retransmissions_(0), RTO(initial_RTO_ms),
-      timer(0), timer_active(false) {}
+      timer(0), timer_active(false), fin_set(false) {}
 
 
 
@@ -56,4 +56,5 @@ private:
   uint64_t RTO;
   uint64_t timer {0};
   bool timer_active {false}; 
+  bool fin_set {false};
 };

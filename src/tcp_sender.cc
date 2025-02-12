@@ -23,9 +23,14 @@ void TCPSender::push( const TransmitFunction& transmit )
     init_msg.SYN = true;
     init_msg.seqno = isn_;
     syn_sent_ = true;
+    // for SYN + FIN
+    if (reader().is_finished()) {
+        init_msg.FIN = true;
+        fin_set = true;
+    }
     transmit(init_msg);
-    next_seqno += 1;
-    bytes_unack += 1;
+    next_seqno += init_msg.sequence_length();  
+    bytes_unack += init_msg.sequence_length();
     outstanding_segments.push_back(init_msg);
     if (!timer_active) { 
       timer_active = true;
@@ -35,7 +40,6 @@ void TCPSender::push( const TransmitFunction& transmit )
   
   uint64_t available_window_size = (window_size > bytes_unack) ? (window_size - bytes_unack) : 0; // how many bytes can we push to receiver
   // Take all the packets of max MAX_PAYLOAD_SIZE out of buffer that we can
-  bool fin_set = false;
   while( available_window_size > 0 && window_size != 0 && reader().bytes_buffered() > 0){
     uint64_t payload_size = std::min({available_window_size, TCPConfig::MAX_PAYLOAD_SIZE, reader().bytes_buffered()});
     std::string data = std::string(reader().peek().substr(0, payload_size));
@@ -74,7 +78,7 @@ void TCPSender::push( const TransmitFunction& transmit )
         fin_msg.FIN = true;
         transmit(fin_msg);
         outstanding_segments.push_back(fin_msg);
-        next_seqno += 1;
+        next_seqno += 1; 
         bytes_unack += 1; 
         fin_set = true;
         if(!timer_active){
@@ -111,6 +115,9 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   }
   uint64_t ackno = msg.ackno->unwrap(isn_, next_seqno);
   if(ackno <= next_seqno - bytes_unack) return;  // this if for preventing duplicate and old Acks
+  if (ackno > next_seqno) { // impossible ack
+    return;
+  }
   size_t old_size = outstanding_segments.size();
   while(!outstanding_segments.empty()){
     // Go through oustanding segments from oldest to youngest
@@ -136,6 +143,9 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
     RTO = initial_RTO_ms_;
     consecutive_retransmissions_ = 0;
   }
+  if (outstanding_segments.empty()) {  
+        timer_active = false; // Stop retransmission timer
+    }
 }
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
