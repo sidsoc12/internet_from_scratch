@@ -7,15 +7,13 @@ using namespace std;
 // This function is for testing only; don't add extra state to support it.
 uint64_t TCPSender::sequence_numbers_in_flight() const
 {
-  debug( "unimplemented sequence_numbers_in_flight() called" );
-  return {};
+  return bytes_unack;
 }
 
 // This function is for testing only; don't add extra state to support it.
 uint64_t TCPSender::consecutive_retransmissions() const
 {
-  debug( "unimplemented consecutive_retransmissions() called" );
-  return {};
+  return consecutive_retransmissions_;
 }
 
 void TCPSender::push( const TransmitFunction& transmit )
@@ -76,6 +74,7 @@ void TCPSender::push( const TransmitFunction& transmit )
         outstanding_segments.push_back(fin_msg);
         next_seqno += 1;
         bytes_unack += 1; 
+        fin_set = true;
         if(!timer_active){
           timer_active = true;
           timer = 0; 
@@ -139,10 +138,9 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
 {
-  if(timer_active){
-    timer = timer + ms_since_last_tick;
-  }
-  if(timer_active && timer >= RTO && !outstanding_segments.empty()){
+  if(outstanding_segments.empty() || !timer_active) return; // return if timer is inactive and there are no outstanding segments
+  timer = timer + ms_since_last_tick;
+  if(timer >= RTO){
     transmit(outstanding_segments.front()); // retransmit oldest unacknowledged segment
     if(window_size > 0){
       consecutive_retransmissions_++;
@@ -150,5 +148,4 @@ void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& trans
     }
     timer = 0;
   }
-  
 }
