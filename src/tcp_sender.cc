@@ -20,8 +20,17 @@ uint64_t TCPSender::consecutive_retransmissions() const
 
 void TCPSender::push( const TransmitFunction& transmit )
 {
-  debug( "unimplemented push() called" );
-  (void)transmit;
+  if(next_seqno == 0){ // first message 
+    TCPSenderMessage msg;
+    msg.SYN = true;
+    msg.seqno = isn_;
+    transmit(msg);
+    next_seqno += 1;
+    bytes_unack += 1;
+    outstanding_segments
+  }
+
+
 }
 
 TCPSenderMessage TCPSender::make_empty_message() const

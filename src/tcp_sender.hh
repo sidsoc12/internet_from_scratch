@@ -3,6 +3,8 @@
 #include "byte_stream.hh"
 #include "tcp_receiver_message.hh"
 #include "tcp_sender_message.hh"
+#include <deque>
+
 
 #include <functional>
 
@@ -45,7 +47,7 @@ private:
   std::deque<TCPSenderMessage> outstanding_segments; // using a double ended queue as my data structure for managing outstanding_segments
   uint64_t next_seqno {0};
   uint64_t bytes_unack {0};
-  uint64_t consecutive_retransmissions {0};
+  uint64_t consecutive_retransmissions_ {0};
   uint64_t RTO;
   uint64_t timer {0};
   bool timer_active {false}; 
