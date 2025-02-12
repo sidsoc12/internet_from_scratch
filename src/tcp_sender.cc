@@ -66,7 +66,6 @@ void TCPSender::push( const TransmitFunction& transmit )
       timer_active = true;
       timer = 0;
     }
-
     if(msg.FIN){
       break;
     }
@@ -86,11 +85,25 @@ void TCPSender::push( const TransmitFunction& transmit )
           timer = 0; 
         }      
   }
-  if(window_size == 0){ // act as if window_size == 1
-    TCPSenderMessage probe;
-    probe.seqno = isn_.wrap(next_seqno , isn_);
-    probe.payload = "?"; // dummy 1 byte payload
-    transmit(probe);
+  if(window_size == 0 && !zero_window_probe_sent){ // act as if window_size == 1
+    uint64_t payload_size = std::min<uint64_t>({1, reader().bytes_buffered()});
+    if (payload_size > 0) {
+        std::string data = std::string(reader().peek().substr(0, payload_size));
+        reader().pop(payload_size);
+        TCPSenderMessage msg;
+        msg.seqno = isn_.wrap(next_seqno, isn_);
+        msg.payload = data;
+        transmit(msg);
+        outstanding_segments.push_back(msg);
+        next_seqno += msg.sequence_length(); 
+        bytes_unack += msg.sequence_length();
+        zero_window_probe_sent = true;
+        zero_window_probe_seqno = msg.seqno.unwrap(isn_, next_seqno); 
+        if(!timer_active){
+          timer_active = true;
+          timer = 0; 
+        }   
+    }
   }
 }
 
@@ -103,6 +116,7 @@ TCPSenderMessage TCPSender::make_empty_message() const
 
 void TCPSender::receive( const TCPReceiverMessage& msg )
 {
+  
   if (msg.RST){ // have to make sure to exit if there is an error
     outstanding_segments.clear();
     timer_active = false;
@@ -110,6 +124,11 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
   }
 
   window_size = msg.window_size; // updating window 
+
+  if (window_size > 0) { // update whether probe can be sent again
+    zero_window_probe_sent = false; 
+  }
+ 
   if(!msg.ackno.has_value()){
     return;
   }
@@ -124,6 +143,12 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
     TCPSenderMessage &oldest_unack_message = outstanding_segments.front();
     if(ackno >= oldest_unack_message.seqno.unwrap(isn_, next_seqno) + oldest_unack_message.sequence_length()){
       bytes_unack -= oldest_unack_message.sequence_length();
+      // Check if probe was acknowledged, if so we have to allow another probe to be created when needed.
+      if (zero_window_probe_seqno.has_value() &&
+                zero_window_probe_seqno.value() == oldest_unack_message.seqno.unwrap(isn_, next_seqno)) {
+                zero_window_probe_sent = false; 
+                zero_window_probe_seqno = std::nullopt; 
+      }
       outstanding_segments.pop_front();
     }
     else{
@@ -143,9 +168,6 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
     RTO = initial_RTO_ms_;
     consecutive_retransmissions_ = 0;
   }
-  if (outstanding_segments.empty()) {  
-        timer_active = false; // Stop retransmission timer
-    }
 }
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )

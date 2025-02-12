@@ -16,7 +16,7 @@ public:
     : input_( std::move(input) ), isn_( isn ), initial_RTO_ms_( initial_RTO_ms ), 
       window_size(1), outstanding_segments(), next_seqno(0), syn_sent_(false),
       bytes_unack(0), consecutive_retransmissions_(0), RTO(initial_RTO_ms),
-      timer(0), timer_active(false), fin_set(false) {}
+      timer(0), timer_active(false), fin_set(false),zero_window_probe_sent(false), zero_window_probe_seqno(std::nullopt) {}
 
 
 
@@ -57,4 +57,7 @@ private:
   uint64_t timer {0};
   bool timer_active {false}; 
   bool fin_set {false};
+  bool zero_window_probe_sent {false};
+  std::optional<uint64_t> zero_window_probe_seqno;  // Store the seqno of the last zero-window probe
+
 };
