@@ -139,6 +139,16 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
 {
-  debug( "unimplemented tick({}, ...) called", ms_since_last_tick );
-  (void)transmit;
+  if(timer_active){
+    timer = timer + ms_since_last_tick;
+  }
+  if(timer_active && timer >= RTO && !outstanding_segments.empty()){
+    transmit(outstanding_segments.front()); // retransmit oldest unacknowledged segment
+    if(window_size > 0){
+      consecutive_retransmissions_++;
+      RTO = RTO * 2;
+    }
+    timer = 0;
+  }
+  
 }
