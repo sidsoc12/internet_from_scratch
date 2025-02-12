@@ -46,6 +46,7 @@ private:
   uint16_t window_size {1}; // initialize window size to 1 
   std::deque<TCPSenderMessage> outstanding_segments; // using a double ended queue as my data structure for managing outstanding_segments
   uint64_t next_seqno {0};
+  bool syn_sent_ {false};
   uint64_t bytes_unack {0};
   uint64_t consecutive_retransmissions_ {0};
   uint64_t RTO;
