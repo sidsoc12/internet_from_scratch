@@ -37,6 +37,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   
   uint64_t available_window_size = (window_size > bytes_unack) ? (window_size - bytes_unack) : 0; // how many bytes can we push to receiver
   // Take all the packets of max MAX_PAYLOAD_SIZE out of buffer that we can
+  bool fin_set = false;
   while( available_window_size > 0 && window_size != 0){
     uint64_t payload_size = std::min({available_window_size, TCPConfig::MAX_PAYLOAD_SIZE, reader().bytes_buffered()});
     std::string data = std::string(reader().peek().substr(0, payload_size));
@@ -45,8 +46,9 @@ void TCPSender::push( const TransmitFunction& transmit )
     msg.seqno = isn_.wrap(next_seqno, isn_);
     msg.payload = data;
     //Check if fin should be pushed
-    if(reader().is_finished()){
+    if(reader().is_finished() && available_window_size > payload_size){
       msg.FIN = true;
+      fin_set = true;
       //should next_seqno be reset here?
     }
     transmit(msg);
@@ -55,14 +57,29 @@ void TCPSender::push( const TransmitFunction& transmit )
     available_window_size -= seq_len;
     next_seqno += seq_len;
     bytes_unack += seq_len;
-    //Check timer 
-    if(seq_len > 0 && !timer_active){
+
+    if (seq_len > 0 && !timer_active) {
       timer_active = true;
       timer = 0;
     }
+
     if(msg.FIN){
       break;
     }
+  }
+  //handle case where FIN couldnt fit but we still need to send it
+  if (!fin_set && reader().is_finished()) {
+        TCPSenderMessage fin_msg;
+        fin_msg.seqno = isn_.wrap(next_seqno, isn_);
+        fin_msg.FIN = true;
+        transmit(fin_msg);
+        outstanding_segments.push_back(fin_msg);
+        next_seqno += 1;
+        bytes_unack += 1; 
+        if(!timer_active){
+          timer_active = true;
+          timer = 0; 
+        }      
   }
   if(window_size == 0){ // act as if window_size == 1
     TCPSenderMessage probe;
@@ -81,8 +98,43 @@ TCPSenderMessage TCPSender::make_empty_message() const
 
 void TCPSender::receive( const TCPReceiverMessage& msg )
 {
-  debug( "unimplemented receive() called" );
-  (void)msg;
+  if (msg.RST){ // have to make sure to exit if there is an error
+    outstanding_segments.clear();
+    timer_active = false;
+    return;
+  }
+
+  window_size = msg.window_size; // updating window 
+  if(!msg.ackno.has_value()){
+    return;
+  }
+  uint64_t ackno = msg.ackno->unwrap(isn_, next_seqno);
+  if(ackno <= next_seqno - bytes_unack) return;  // this if for preventing duplicate and old Acks
+  size_t old_size = outstanding_segments.size();
+  while(!outstanding_segments.empty()){
+    // Go through oustanding segments from oldest to youngest
+    TCPSenderMessage &oldest_unack_message = outstanding_segments.front();
+    if(ackno >= oldest_unack_message.seqno.unwrap(isn_, next_seqno) + oldest_unack_message.sequence_length()){
+      bytes_unack -= oldest_unack_message.sequence_length();
+      outstanding_segments.pop_front();
+    }
+    else{
+      break;
+    }
+  }
+  // if new data was ack => reset transmission timer 
+  if(old_size > outstanding_segments.size()){
+    if(!outstanding_segments.empty()){
+      timer = 0; // reset timer if there are outstanding segments
+      timer_active = true;
+    }
+    else{
+      // stop timer if all oustanding have been acknowledged
+      timer_active = false;
+    }
+    RTO = initial_RTO_ms_;
+    consecutive_retransmissions_ = 0;
+  }
 }
 
 void TCPSender::tick( uint64_t ms_since_last_tick, const TransmitFunction& transmit )
