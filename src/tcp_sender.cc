@@ -18,13 +18,36 @@ uint64_t TCPSender::consecutive_retransmissions() const
 
 void TCPSender::push( const TransmitFunction& transmit )
 {
+
+  if (input_.writer().has_error()) {  // This is for managing error declared in stream.
+    TCPSenderMessage rst_msg;
+    rst_msg.seqno = isn_.wrap(next_seqno, isn_);
+    rst_msg.RST = true;
+    transmit(rst_msg);
+    return;  
+  }
   if(!syn_sent_){ // first message 
     TCPSenderMessage init_msg;
     init_msg.SYN = true;
     init_msg.seqno = isn_;
     syn_sent_ = true;
+
+    // for reading before push
+    uint64_t available_window_size = (window_size > bytes_unack) ? (window_size - bytes_unack) : 0;
+   
+    //reserve byte for SYN
+    if (available_window_size > 0) {
+      available_window_size -= 1;  
+    }
+   
+    if (available_window_size > 0 && reader().bytes_buffered() > 0) {
+        uint64_t payload_size = std::min({available_window_size, TCPConfig::MAX_PAYLOAD_SIZE, reader().bytes_buffered()});
+        std::string data = std::string(reader().peek().substr(0, payload_size));
+        reader().pop(payload_size);
+        init_msg.payload = data;
+    }
     // for SYN + FIN
-    if (reader().is_finished()) {
+    if (reader().is_finished() &&  available_window_size > init_msg.sequence_length()) {
         init_msg.FIN = true;
         fin_set = true;
     }
@@ -53,7 +76,6 @@ void TCPSender::push( const TransmitFunction& transmit )
     if(reader().is_finished() && available_window_size > payload_size){
       msg.FIN = true;
       fin_set = true;
-      //should next_seqno be reset here?
     }
     transmit(msg);
     outstanding_segments.push_back(msg);
@@ -85,6 +107,21 @@ void TCPSender::push( const TransmitFunction& transmit )
           timer = 0; 
         }      
   }
+  if (fin_ready_ && !fin_set) {  // send fin flag if probe got acknowed and fin flag can be sent
+    TCPSenderMessage fin_msg;
+    fin_msg.seqno = isn_.wrap(next_seqno, isn_);
+    fin_msg.FIN = true;
+    transmit(fin_msg);
+    outstanding_segments.push_back(fin_msg);
+    next_seqno += 1;
+    bytes_unack += 1;
+    fin_set = true;
+    fin_ready_ = false; 
+    if (!timer_active) {
+        timer_active = true;
+        timer = 0;
+    }
+  }
   if(window_size == 0 && !zero_window_probe_sent){ // act as if window_size == 1
     uint64_t payload_size = std::min<uint64_t>({1, reader().bytes_buffered()});
     if (payload_size > 0) {
@@ -111,6 +148,9 @@ TCPSenderMessage TCPSender::make_empty_message() const
 {
   TCPSenderMessage empty_msg;
   empty_msg.seqno = isn_.wrap(next_seqno, isn_);
+  if (writer().has_error()) {
+    empty_msg.RST = true;
+  }
   return empty_msg; 
 }
 
@@ -118,6 +158,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 {
   
   if (msg.RST){ // have to make sure to exit if there is an error
+    input_.writer().set_error();
     outstanding_segments.clear();
     timer_active = false;
     return;
@@ -148,6 +189,9 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
                 zero_window_probe_seqno.value() == oldest_unack_message.seqno.unwrap(isn_, next_seqno)) {
                 zero_window_probe_sent = false; 
                 zero_window_probe_seqno = std::nullopt; 
+                if (!fin_set && reader().is_finished() && bytes_unack == 0) {
+                  fin_ready_ = true;
+                }
       }
       outstanding_segments.pop_front();
     }
