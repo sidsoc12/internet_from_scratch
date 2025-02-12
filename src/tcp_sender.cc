@@ -42,7 +42,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     msg.seqno = isn_.wrap(next_seqno, isn_);
     msg.payload = data;
 
-    if(reader().is_finished() && available_window_size > payload_size){
+    if(reader().is_finished() && available_window_size > payload_size && outstanding_segments.empty()){
       msg.FIN = true;
       fin_set = true;
       //should next_seqno be reset here?
@@ -59,7 +59,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     }
   }
   //handle case where FIN couldnt fit but we still need to send it
-  if (!fin_set && reader().is_finished()) {
+  if (!fin_set && reader().is_finished() && outstanding_segments.empty()) {
         TCPSenderMessage fin_msg;
         fin_msg.seqno = isn_.wrap(next_seqno, isn_);
         fin_msg.FIN = true;
@@ -78,8 +78,9 @@ void TCPSender::push( const TransmitFunction& transmit )
 
 TCPSenderMessage TCPSender::make_empty_message() const
 {
-  debug( "unimplemented make_empty_message() called" );
-  return {};
+  TCPSenderMessage empty_msg;
+  empty_msg.seqno = isn_.wrap(next_seqno, isn_);
+  return empty_msg; 
 }
 
 void TCPSender::receive( const TCPReceiverMessage& msg )
