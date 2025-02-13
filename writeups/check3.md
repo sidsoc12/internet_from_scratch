@@ -96,7 +96,22 @@ e698b6b074daca2583ab114fa0e81e4f47c721b6780cdedfb66a93d711fa2f78  /tmp/1mbrec.tx
 cs144@cs144vm:~/minnow$ 
 
 
+4.3::
 
+cs144@cs144vm:~/minnow$ ./build/apps/webget cs144.keithw.org /hasher/xyzzy 
+DEBUG: minnow connecting to 104.196.238.229:80...
+DEBUG: minnow successfully connected to 104.196.238.229:80.
+Absolute Seq: 1, Reassembler Index: 0, FIN: 0, Payload Size: 181
+HTTP/1.1 200 OK
+Date: Thu, 13 Feb 2025 00:30:04 GMT
+Server: Apache
+Content-Length: 44
+Connection: close
+Content-Type: text/plain
+
+QWx0NhMPkoM/bJr/ohvHXlviFhOyYrYb+qqdOnwLYo4
+Absolute Seq: 182, Reassembler Index: 181, FIN: 1, Payload Size: 0
+DEBUG: minnow inbound stream from 104.196.238.229:80 finished cleanly.
 
 
 Implementation Challenges:
