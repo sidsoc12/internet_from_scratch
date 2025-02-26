@@ -39,24 +39,26 @@ NetworkInterface::NetworkInterface( string_view name,
 //! can be converted to a uint32_t (raw 32-bit IP address) by using the Address::ipv4_numeric() method.
 void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Address& next_hop )
 {
-  uint32_t ip_32 = next_hop.ipv4_numeric(); // int 32 version of address 
-  if (cache.find(ip_32) != cache.end()) { // ip add is in cache
+  uint32_t ip_32 = next_hop.ipv4_numeric();   // int 32 version of address
+  if ( cache.find( ip_32 ) != cache.end() ) { // ip add is in cache
     pair<EthernetAddress, size_t>& entry = cache[ip_32];
     EthernetAddress eth_addr = entry.first;
     EthernetFrame sent_frame;
     sent_frame.header.dst = eth_addr;
     sent_frame.header.src = ethernet_address_;
     sent_frame.header.type = EthernetHeader::TYPE_IPv4;
-    sent_frame.payload = serialize(dgram); // serializing datagram 
-    transmit(sent_frame);
+    sent_frame.payload = serialize( dgram ); // serializing datagram
+    transmit( sent_frame );
     return;
   }
   // if ip_32 is not in cache, add it to queue
-  datagram_q.push_back({ip_32, dgram});
+  datagram_q.push_back( { ip_32, dgram } );
 
   // have to send ARP request, but first check if one was sent in last 5 seconds
 
-  if(arp_timestamps.find(ip_32) == arp_timestamps.end() || arp_timestamps[ip_32] >= 5000){ // address has never been requested yet or it has been longer than 5 seconds
+  if ( arp_timestamps.find( ip_32 ) == arp_timestamps.end()
+       || arp_timestamps[ip_32]
+            >= 5000 ) { // address has never been requested yet or it has been longer than 5 seconds
 
     ARPMessage arp_request;
     arp_request.opcode = ARPMessage::OPCODE_REQUEST;
@@ -69,11 +71,11 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
     frame.header.dst = ETHERNET_BROADCAST;
     frame.header.src = ethernet_address_;
     frame.header.type = EthernetHeader::TYPE_ARP;
-    frame.payload = serialize(arp_request);
+    frame.payload = serialize( arp_request );
 
-    transmit(frame);
+    transmit( frame );
 
-    arp_timestamps[ip_32] = 0; // reset timer to 0 
+    arp_timestamps[ip_32] = 0; // reset timer to 0
   }
 }
 
@@ -81,51 +83,50 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
   // first need to check if frame is for this interface
-  if (frame.header.dst != ETHERNET_BROADCAST && frame.header.dst != ethernet_address_ ) {
-        return;
+  if ( frame.header.dst != ETHERNET_BROADCAST && frame.header.dst != ethernet_address_ ) {
+    return;
   }
   // if inbound frame is IPV4
-  if(frame.header.type == EthernetHeader::TYPE_IPv4){
+  if ( frame.header.type == EthernetHeader::TYPE_IPv4 ) {
     InternetDatagram dgram;
-    if(parse(dgram , frame.payload)) { // prase payload
-      datagrams_received_.push(dgram);
+    if ( parse( dgram, frame.payload ) ) { // prase payload
+      datagrams_received_.push( dgram );
     }
   }
 
   // if inbound frame is ARP
-  else if(frame.header.type == EthernetHeader::TYPE_ARP){
+  else if ( frame.header.type == EthernetHeader::TYPE_ARP ) {
     ARPMessage arp_msg;
-    if (!parse( arp_msg, frame.payload)){ // parse paylaod
+    if ( !parse( arp_msg, frame.payload ) ) { // parse paylaod
       return;
     }
-    //remember the mapping between the sender’s IP address and Ethernet address for 30 seconds
+    // remember the mapping between the sender’s IP address and Ethernet address for 30 seconds
     uint32_t sender_ip_address = arp_msg.sender_ip_address;
     EthernetAddress sender_ethernet_address = arp_msg.sender_ethernet_address;
-    cache[sender_ip_address] = {sender_ethernet_address, 0}; // set 30 seconds for time 
+    cache[sender_ip_address] = { sender_ethernet_address, 0 }; // set 30 seconds for time
 
     // check if any datagrams from queue can be sent using new mapping
     auto it = datagram_q.begin();
-    while (it != datagram_q.end()){
-      if(it->first == sender_ip_address){
+    while ( it != datagram_q.end() ) {
+      if ( it->first == sender_ip_address ) {
         InternetDatagram dgram = it->second;
         // Package datagram into ethernet frame
         EthernetFrame send_frame;
         send_frame.header.dst = sender_ethernet_address;
         send_frame.header.src = ethernet_address_;
         send_frame.header.type = EthernetHeader::TYPE_IPv4;
-        send_frame.payload = serialize(dgram);
+        send_frame.payload = serialize( dgram );
 
         // Send Ethernet frame
-        transmit(send_frame);
+        transmit( send_frame );
 
-        it = datagram_q.erase(it);
-      }
-      else{
+        it = datagram_q.erase( it );
+      } else {
         it++; // have to manually increment itertor if nothing has been removed
       }
     }
     // send reply immediately if its a APR request
-    if(arp_msg.opcode == ARPMessage::OPCODE_REQUEST && arp_msg.target_ip_address == ip_address_.ipv4_numeric()){
+    if ( arp_msg.opcode == ARPMessage::OPCODE_REQUEST && arp_msg.target_ip_address == ip_address_.ipv4_numeric() ) {
       ARPMessage arp_reply;
       arp_reply.sender_ip_address = ip_address_.ipv4_numeric();
       arp_reply.sender_ethernet_address = ethernet_address_;
@@ -138,51 +139,44 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
       reply_frame.header.dst = sender_ethernet_address;
       reply_frame.header.src = ethernet_address_;
       reply_frame.header.type = EthernetHeader::TYPE_ARP;
-      reply_frame.payload = serialize(arp_reply);
+      reply_frame.payload = serialize( arp_reply );
 
-      transmit(reply_frame);
+      transmit( reply_frame );
     }
   }
-
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void NetworkInterface::tick( const size_t ms_since_last_tick )
 {
   // update times for cache elements
-  for (auto entry_it = cache.begin(); entry_it != cache.end();){
+  for ( auto entry_it = cache.begin(); entry_it != cache.end(); ) {
     entry_it->second.second += ms_since_last_tick;
-    if(entry_it->second.second >= 30000){ // if time has been for greater than 30 seconds, forget mapping
-      entry_it = cache.erase(entry_it);
-    }
-    else{
+    if ( entry_it->second.second >= 30000 ) { // if time has been for greater than 30 seconds, forget mapping
+      entry_it = cache.erase( entry_it );
+    } else {
       entry_it++;
     }
   }
 
-
   // As explained by sunetid: ejpark24 on Ed:
 
-  // you can drop ALL datagrams that were waiting on that reply, even if the more recent datagrams haven't been waiting longer than 5 seconds
-
+  // you can drop ALL datagrams that were waiting on that reply, even if the more recent datagrams haven't been
+  // waiting longer than 5 seconds
 
   // update ARP timestamp
-  for (auto entry_it = arp_timestamps.begin(); entry_it != arp_timestamps.end();) {
-      entry_it->second += ms_since_last_tick;
-      if (entry_it->second >= 5000) { // If 5 seconds have passed, drop all pending datagrams for this IP
-          datagram_q.erase(
-              std::remove_if(
-                  datagram_q.begin(),
-                  datagram_q.end(),
-                  [&](const std::pair<uint32_t, InternetDatagram>& pair) {
-                      return pair.first == entry_it->first;
-                  }
-              ),
-              datagram_q.end()
-          );
-          entry_it = arp_timestamps.erase(entry_it); 
-      } else {
-          entry_it++;
-      }
+  for ( auto entry_it = arp_timestamps.begin(); entry_it != arp_timestamps.end(); ) {
+    entry_it->second += ms_since_last_tick;
+    if ( entry_it->second >= 5000 ) { // If 5 seconds have passed, drop all pending datagrams for this IP
+      datagram_q.erase( std::remove_if( datagram_q.begin(),
+                                        datagram_q.end(),
+                                        [&]( const std::pair<uint32_t, InternetDatagram>& pair ) {
+                                          return pair.first == entry_it->first;
+                                        } ),
+                        datagram_q.end() );
+      entry_it = arp_timestamps.erase( entry_it );
+    } else {
+      entry_it++;
+    }
   }
 }
