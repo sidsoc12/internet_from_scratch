@@ -88,7 +88,7 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
   // update times for cache elements
   for (auto entry_it = cache.begin(); entry_it != cache.end();){
     entry_it->second.second += ms_since_last_tick;
-    if(entry_it->second.second >= 30000){
+    if(entry_it->second.second >= 30000){ // if time has been for greater than 30 seconds, forget mapping
       entry_it = cache.erase(entry_it);
     }
     else{
@@ -97,6 +97,8 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
   }
 
   // update ARP timestamp
-
+  for (auto entry_it = arp_timestamps.begin(); entry_it != arp_timestamps.end();){
+    entry_it->second += ms_since_last_tick;
+  }
   
 }
