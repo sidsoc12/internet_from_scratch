@@ -1,0 +1,19 @@
+traceroute to www.uq.edu.au (130.102.184.3), 30 hops max, 60 byte packets
+ 1  _gateway (192.168.64.1)  0.750 ms  0.695 ms  0.675 ms
+ 2  10.27.8.2 (10.27.8.2)  7.891 ms  7.875 ms  7.860 ms
+ 3  xb-nw-rtr-vlan11.SUNet (171.64.0.193)  4.711 ms  4.680 ms  4.663 ms
+ 4  hpr-svl-rtr-vlan3.SUNet (171.66.255.147)  7.780 ms  7.747 ms hpr-svl-rtr-vlan2.SUNet (171.64.255.147)  8.606 ms
+ 5  hpr-svl-hpr3--stan-100ge.cenic.net (137.164.27.60)  7.726 ms  7.717 ms  7.700 ms
+ 6  aarnet-2-is-jmb-778.sttlwa.pacificwave.net (207.231.245.4)  23.792 ms  21.690 ms  21.480 ms
+ 7  et-2-0-0.pe1.a.hnl.aarnet.net.au (113.197.15.200)  72.337 ms  72.038 ms  73.245 ms
+ 8  et-2-1-0.pe1.sxt.bkvl.nsw.aarnet.net.au (113.197.15.98)  164.656 ms  164.088 ms  164.058 ms
+ 9  et-3-3-0.pe1.brwy.nsw.aarnet.net.au (113.197.15.148)  165.031 ms  165.024 ms  165.017 ms
+10  et-0-3-0.pe1.gdpt.qld.aarnet.net.au (113.197.15.17)  184.322 ms  184.316 ms  184.309 ms
+11  138.44.129.158 (138.44.129.158)  180.029 ms  180.897 ms  181.580 ms
+12  fw-a-gw10.router.uq.edu.au (130.102.0.193)  181.556 ms  181.582 ms  180.892 ms
+13  se10-fw-a.router.uq.edu.au (130.102.159.61)  182.840 ms  182.626 ms  182.593 ms
+14  * * *
+15  * * *
+16  * * *
+17  * * *
+18  www.confucius-institute.centre.uq.edu.au (130.102.184.3)  181.252 ms  182.504 ms  182.482 ms
