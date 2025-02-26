@@ -182,7 +182,7 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
           );
           entry_it = arp_timestamps.erase(entry_it); 
       } else {
-          ++entry_it;
+          entry_it++;
       }
   }
 }
