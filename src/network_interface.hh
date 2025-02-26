@@ -1,11 +1,12 @@
 #pragma once
-#include <unordered_map>
 #include "address.hh"
 #include "ethernet_frame.hh"
 #include "ipv4_datagram.hh"
 
 #include <memory>
 #include <queue>
+#include <unordered_map>
+#include <utility>
 
 // A "network interface" that connects IP (the internet layer, or network layer)
 // with Ethernet (the network access layer, or link layer).
@@ -84,8 +85,8 @@ private:
   std::queue<InternetDatagram> datagrams_received_ {};
 
   // New datastructures
-  unordered_map<uint32_t, pair<EthernetAddress, size_t>> cache; 
-  unordered_map<uint32_t, size_t> arp_timestamps;
+  std::unordered_map<uint32_t, std::pair<EthernetAddress, size_t>> cache; 
+  std::unordered_map<uint32_t, size_t> arp_timestamps;
   std::vector<std::pair<uint32_t, InternetDatagram>> datagram_q;
 
   

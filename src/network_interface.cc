@@ -6,6 +6,10 @@
 #include "exception.hh"
 #include "helpers.hh"
 #include "network_interface.hh"
+#include <algorithm>
+
+#include <unordered_map>
+#include <utility>
 
 using namespace std;
 
@@ -19,6 +23,11 @@ NetworkInterface::NetworkInterface( string_view name,
   , port_( notnull( "OutputPort", move( port ) ) )
   , ethernet_address_( ethernet_address )
   , ip_address_( ip_address )
+  , datagrams_received_()
+  , cache()
+  , arp_timestamps()
+  , datagram_q()
+
 {
   cerr << "DEBUG: Network interface has Ethernet address " << to_string( ethernet_address_ ) << " and IP address "
        << ip_address.ip() << "\n";
@@ -34,7 +43,6 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
   if (cache.find(ip_32) != cache.end()) { // ip add is in cache
     pair<EthernetAddress, size_t>& entry = cache[ip_32];
     EthernetAddress eth_addr = entry.first;
-    size_t time = entry.second;
     EthernetFrame sent_frame;
     sent_frame.header.dst = eth_addr;
     sent_frame.header.src = ethernet_address_;
@@ -48,7 +56,7 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 
   // have to send ARP request, but first check if one was sent in last 5 seconds
 
-  if(arp_timestamps.find(ip_32) != arp_timestamps.end() || arp_timestamps[ip_32] >= 5000){ // address has never been requested yet or it has been longer than 5 seconds
+  if(arp_timestamps.find(ip_32) == arp_timestamps.end() || arp_timestamps[ip_32] >= 5000){ // address has never been requested yet or it has been longer than 5 seconds
 
     ARPMessage arp_request;
     arp_request.opcode = ARPMessage::OPCODE_REQUEST;
@@ -93,7 +101,7 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
     //remember the mapping between the sender’s IP address and Ethernet address for 30 seconds
     uint32_t sender_ip_address = arp_msg.sender_ip_address;
     EthernetAddress sender_ethernet_address = arp_msg.sender_ethernet_address;
-    cache[sender_ip_address] = {sender_ethernet_address, 30000}; // set 30 seconds for time 
+    cache[sender_ip_address] = {sender_ethernet_address, 0}; // set 30 seconds for time 
 
     // check if any datagrams from queue can be sent using new mapping
     auto it = datagram_q.begin();
@@ -152,8 +160,29 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
     }
   }
 
+
+  // As explained by sunetid: ejpark24 on Ed:
+
+  // you can drop ALL datagrams that were waiting on that reply, even if the more recent datagrams haven't been waiting longer than 5 seconds
+
+
   // update ARP timestamp
-  for (auto& entry : arp_timestamps) {
-    entry.second += ms_since_last_tick;
+  for (auto it = arp_timestamps.begin(); it != arp_timestamps.end();) {
+      it->second += ms_since_last_tick;
+      if (it->second >= 5000) { // If 5 seconds have passed, drop all pending datagrams for this IP
+          datagram_q.erase(
+              std::remove_if(
+                  datagram_q.begin(),
+                  datagram_q.end(),
+                  [&](const std::pair<uint32_t, InternetDatagram>& p) {
+                      return p.first == it->first;
+                  }
+              ),
+              datagram_q.end()
+          );
+          it = arp_timestamps.erase(it); 
+      } else {
+          ++it;
+      }
   }
 }
