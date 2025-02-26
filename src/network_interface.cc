@@ -79,11 +79,48 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
   // if inbound frame is IPV4
   if(frame.header.type == EthernetHeader::TYPE_IPv4){
     InternetDatagram dgram;
-    if( parse(dgram , frame.payload) == ParseResult::NoError ) { // prase payload
+    if(parse(dgram , frame.payload)) { // prase payload
       datagrams_received_.push(dgram);
     }
   }
+
   // if inbound frame is ARP
+  else if(frame.header.type == EthernetHeader::TYPE_ARP){
+    ARPMessage arp_msg;
+    if (!parse( arp_msg, frame.payload)){ // parse paylaod
+      return;
+    }
+    //remember the mapping between the sender’s IP address and Ethernet address for 30 seconds
+    uint32_t sender_ip_address = arp_msg.sender_ip_address;
+    EthernetAddress sender_ethernet_address = arp_msg.sender_ethernet_address;
+    cache[sender_ip_address] = {sender_ethernet_address, 30000}; // set 30 seconds for time 
+
+    // check if any datagrams from queue can be sent using new mapping
+    auto it = datagram_q.begin();
+    while (it != datagram_q.end()){
+      if(it->first == sender_ip_address){
+        InternetDatagram dgram = it->second;
+        // Package datagram into ethernet frame
+        EthernetFrame send_frame;
+        send_frame.header.dst = sender_ethernet_address;
+        send_frame.header.src = ethernet_address_;
+        send_frame.header.type = EthernetHeader::TYPE_IPv4;
+        send_frame.payload = serialize(dgram);
+
+        // Send Ethernet frame
+        transmit(send_frame);
+
+        it = datagram_q.erase(it);
+      }
+      else{
+        it++; // have to manually increment itertor if nothing has been removed
+      }
+    }
+
+
+
+
+  }
 
 }
 
