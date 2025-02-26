@@ -116,16 +116,24 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
         it++; // have to manually increment itertor if nothing has been removed
       }
     }
-
     // send reply immediately if its a APR request
-    if(arp_msg.opcode == ARPMessage::OPCODE_REQUEST && arp_msg.target_ip_address = ip_address_.ipv4_numeric()){
+    if(arp_msg.opcode == ARPMessage::OPCODE_REQUEST && arp_msg.target_ip_address == ip_address_.ipv4_numeric()){
       ARPMessage arp_reply;
       arp_reply.sender_ip_address = ip_address_.ipv4_numeric();
+      arp_reply.sender_ethernet_address = ethernet_address_;
       arp_reply.target_ethernet_address = sender_ethernet_address;
       arp_reply.target_ip_address = sender_ip_address;
-      
-    }
+      arp_reply.opcode = ARPMessage::OPCODE_REPLY;
 
+      // put into frame
+      EthernetFrame reply_frame;
+      reply_frame.header.dst = sender_ethernet_address;
+      reply_frame.header.src = ethernet_address_;
+      reply_frame.header.type = EthernetHeader::TYPE_ARP;
+      reply_frame.payload = serialize(arp_reply);
+
+      transmit(reply_frame);
+    }
   }
 
 }
