@@ -1,5 +1,5 @@
 #pragma once
-
+#include <unordered_map>
 #include "address.hh"
 #include "ethernet_frame.hh"
 #include "ipv4_datagram.hh"
@@ -82,4 +82,8 @@ private:
 
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
+
+  // New datastructures
+  unordered_map<uint32_t, pair<EthernetAddress, size_t>> cache; 
+  unordered_map<uint32_t, size_t> arp_timestamps;
 };

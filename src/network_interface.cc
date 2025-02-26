@@ -30,9 +30,7 @@ NetworkInterface::NetworkInterface( string_view name,
 //! can be converted to a uint32_t (raw 32-bit IP address) by using the Address::ipv4_numeric() method.
 void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Address& next_hop )
 {
-  debug( "unimplemented send_datagram called" );
-  (void)dgram;
-  (void)next_hop;
+  
 }
 
 //! \param[in] frame the incoming Ethernet frame
