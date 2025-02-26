@@ -72,7 +72,14 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 //! \param[in] frame the incoming Ethernet frame
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
-  
+  // first need to check if frame is for this interface
+  if (frame.header.dst != ETHERNET_BROADCAST && frame.header.dst != ethernet_address_ ) {
+        return;
+  }
+  // if inbound frame is IPV4
+
+  // if inbound frame is ARP
+
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
