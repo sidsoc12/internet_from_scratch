@@ -117,8 +117,14 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
       }
     }
 
-
-
+    // send reply immediately if its a APR request
+    if(arp_msg.opcode == ARPMessage::OPCODE_REQUEST && arp_msg.target_ip_address = ip_address_.ipv4_numeric()){
+      ARPMessage arp_reply;
+      arp_reply.sender_ip_address = ip_address_.ipv4_numeric();
+      arp_reply.target_ethernet_address = sender_ethernet_address;
+      arp_reply.target_ip_address = sender_ip_address;
+      
+    }
 
   }
 
