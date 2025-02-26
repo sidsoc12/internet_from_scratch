@@ -73,11 +73,16 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
   // first need to check if frame is for this interface
-  if (frame.header.dst != ETHERNET_BROADCAST || frame.header.dst != ethernet_address_ ) {
+  if (frame.header.dst != ETHERNET_BROADCAST && frame.header.dst != ethernet_address_ ) {
         return;
   }
   // if inbound frame is IPV4
-
+  if(frame.header.type == EthernetHeader::TYPE_IPv4){
+    InternetDatagram dgram;
+    if( parse(dgram , frame.payload) == ParseResult::NoError ) { // prase payload
+      datagrams_received_.push(dgram);
+    }
+  }
   // if inbound frame is ARP
 
 }
