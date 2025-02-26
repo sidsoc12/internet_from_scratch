@@ -167,22 +167,22 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
 
 
   // update ARP timestamp
-  for (auto it = arp_timestamps.begin(); it != arp_timestamps.end();) {
-      it->second += ms_since_last_tick;
-      if (it->second >= 5000) { // If 5 seconds have passed, drop all pending datagrams for this IP
+  for (auto entry_it = arp_timestamps.begin(); entry_it != arp_timestamps.end();) {
+      entry_it->second += ms_since_last_tick;
+      if (entry_it->second >= 5000) { // If 5 seconds have passed, drop all pending datagrams for this IP
           datagram_q.erase(
               std::remove_if(
                   datagram_q.begin(),
                   datagram_q.end(),
-                  [&](const std::pair<uint32_t, InternetDatagram>& p) {
-                      return p.first == it->first;
+                  [&](const std::pair<uint32_t, InternetDatagram>& pair) {
+                      return pair.first == entry_it->first;
                   }
               ),
               datagram_q.end()
           );
-          it = arp_timestamps.erase(it); 
+          entry_it = arp_timestamps.erase(entry_it); 
       } else {
-          ++it;
+          ++entry_it;
       }
   }
 }
