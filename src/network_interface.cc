@@ -153,8 +153,7 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
   }
 
   // update ARP timestamp
-  for (auto entry_it = arp_timestamps.begin(); entry_it != arp_timestamps.end();){
-    entry_it->second += ms_since_last_tick;
+  for (auto& entry : arp_timestamps) {
+    entry.second += ms_since_last_tick;
   }
-  
 }
