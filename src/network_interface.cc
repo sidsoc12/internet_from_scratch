@@ -30,18 +30,53 @@ NetworkInterface::NetworkInterface( string_view name,
 //! can be converted to a uint32_t (raw 32-bit IP address) by using the Address::ipv4_numeric() method.
 void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Address& next_hop )
 {
-  
+  uint32_t ip_32 = next_hop.ipv4_numeric(); // int 32 version of address 
+  if (cache.find(ip_32) != cache.end()) { // ip add is in cache
+    pair<EthernetAddress, size_t>& entry = cache[ip_32];
+    EthernetAddress eth_addr = entry.first;
+    size_t time = entry.second;
+    EthernetFrame sent_frame;
+    sent_frame.header.dst = eth_addr;
+    sent_frame.header.src = ethernet_address_;
+    sent_frame.header.type = EthernetHeader::TYPE_IPv4;
+    sent_frame.payload = serialize(dgram); // serializing datagram 
+    transmit(sent_frame);
+    return;
+  }
+  // if ip_32 is not in cache, add it to queue
+  datagram_q.push_back({ip_32, dgram});
+
+  // have to send ARP request, but first check if one was sent in last 5 seconds
+
+  if(arp_timestamps.find(ip_32) != arp_timestamps.end() || arp_timestamps[ip_32] >= 5000){ // address has never been requested yet or it has been longer than 5 seconds
+
+    ARPMessage arp_request;
+    arp_request.opcode = ARPMessage::OPCODE_REQUEST;
+    arp_request.sender_ethernet_address = ethernet_address_;
+    arp_request.sender_ip_address = ip_address_.ipv4_numeric();
+    arp_request.target_ethernet_address = {};
+    arp_request.target_ip_address = ip_32;
+
+    EthernetFrame frame; // put the ARP request in the ethernet frame
+    frame.header.dst = ETHERNET_BROADCAST;
+    frame.header.src = ethernet_address_;
+    frame.header.type = EthernetHeader::TYPE_ARP;
+    frame.payload = serialize(arp_request);
+
+    transmit(frame);
+
+    arp_timestamps[ip_32] = 0; // reset timer to 0 
+  }
 }
 
 //! \param[in] frame the incoming Ethernet frame
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
-  debug( "unimplemented recv_frame called" );
-  (void)frame;
+  
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void NetworkInterface::tick( const size_t ms_since_last_tick )
 {
-  debug( "unimplemented tick({}) called", ms_since_last_tick );
+  
 }

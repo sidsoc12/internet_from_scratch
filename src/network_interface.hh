@@ -86,4 +86,7 @@ private:
   // New datastructures
   unordered_map<uint32_t, pair<EthernetAddress, size_t>> cache; 
   unordered_map<uint32_t, size_t> arp_timestamps;
+  std::vector<std::pair<uint32_t, InternetDatagram>> datagram_q;
+
+  
 };
