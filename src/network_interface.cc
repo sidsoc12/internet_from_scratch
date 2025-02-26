@@ -73,7 +73,7 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
 void NetworkInterface::recv_frame( EthernetFrame frame )
 {
   // first need to check if frame is for this interface
-  if (frame.header.dst != ETHERNET_BROADCAST && frame.header.dst != ethernet_address_ ) {
+  if (frame.header.dst != ETHERNET_BROADCAST || frame.header.dst != ethernet_address_ ) {
         return;
   }
   // if inbound frame is IPV4
@@ -85,5 +85,18 @@ void NetworkInterface::recv_frame( EthernetFrame frame )
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void NetworkInterface::tick( const size_t ms_since_last_tick )
 {
+  // update times for cache elements
+  for (auto entry_it = cache.begin(); entry_it != cache.end();){
+    entry_it->second.second += ms_since_last_tick;
+    if(entry_it->second.second >= 30000){
+      entry_it = cache.erase(entry_it);
+    }
+    else{
+      entry_it++;
+    }
+  }
+
+  // update ARP timestamp
+
   
 }
