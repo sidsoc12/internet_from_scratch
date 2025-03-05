@@ -1,5 +1,6 @@
 #include "router.hh"
 #include "debug.hh"
+#include <algorithm> // Add this line
 
 #include <iostream>
 
@@ -16,15 +17,16 @@ void Router::add_route( const uint32_t route_prefix,
                         const optional<Address> next_hop,
                         const size_t interface_num )
 {
-  cerr << "DEBUG: adding route " << Address::from_ipv4_numeric( route_prefix ).ip() << "/"
-       << static_cast<int>( prefix_length ) << " => " << ( next_hop.has_value() ? next_hop->ip() : "(direct)" )
-       << " on interface " << interface_num << "\n";
-
-  debug( "unimplemented add_route() called" );
+  routes.push_back({route_prefix, prefix_length, next_hop, interface_num});
+  // sort the routes based on prefix_length
+  std::sort(routes.begin(), routes.end(), [](const Route &a, const Route &b) { // sort based on higher prefix length
+        return a.prefix_length > b.prefix_length;  
+  });
 }
 
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  debug( "unimplemented route() called" );
+  // loop through the datagram queue
+  
 }

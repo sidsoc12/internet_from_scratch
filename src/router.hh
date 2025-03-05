@@ -2,6 +2,7 @@
 
 #include "exception.hh"
 #include "network_interface.hh"
+#include <vector>
 
 #include <optional>
 
