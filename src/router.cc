@@ -34,8 +34,30 @@ void Router::route()
       InternetDatagram datagram = queue.front();
       queue.pop();
       if(datagram.header.ttl == 0 || datagram.header.ttl - 1 == 0){
-        
+        continue; // drop this datagram and go to next datagram
+      } 
+      
+      const Route* match = nullptr;
+
+      // Loop through all potential routes and find longest prefix match
+      for(const auto &route: routes){
+        bool has_route_match = true;
+        for(int i = 31; i >= 32 - route.prefix_length; i--){
+          // Bit by Bit comparison until prefix_length 
+          if(((route.prefix >> i) & 1 ) !=  ((datagram.header.dst >> i) & 1)){
+            has_route_match = false;
+            break;
+          }
+        }
+        if(has_route_match){
+          match = &route;
+          break; // since list is sorted, first match is best match
+        }
       }
+      if(match == nullptr){
+        continue;
+      }
+      
 
     }
   }
