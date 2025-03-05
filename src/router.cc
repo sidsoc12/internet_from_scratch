@@ -36,7 +36,7 @@ void Router::route()
     while(!queue.empty()){ // go through all the datagrams in the queue
       InternetDatagram datagram = queue.front();
       queue.pop();
-      if (datagram.header.ttl <= 1) {
+      if (datagram.header.ttl <= 1) { // check ttl 
         continue;
       }
       datagram.header.ttl -= 1;
