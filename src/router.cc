@@ -27,6 +27,16 @@ void Router::add_route( const uint32_t route_prefix,
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  // loop through the datagram queue
-  
+  // loop through the router's interfaces 
+  for (auto &intr: interfaces_){
+    std::queue<InternetDatagram> queue = intr->datagrams_received();
+    while(!queue.empty()){ // go through all the datagrams in the queue
+      InternetDatagram datagram = queue.front();
+      queue.pop();
+      if(datagram.header.ttl == 0 || datagram.header.ttl - 1 == 0){
+        
+      }
+
+    }
+  }
 }
