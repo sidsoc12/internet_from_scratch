@@ -36,16 +36,17 @@ void Router::route()
     while(!queue.empty()){ // go through all the datagrams in the queue
       InternetDatagram datagram = queue.front();
       queue.pop();
-      datagram.header.ttl--;
-      if(datagram.header.ttl <= 0){
-        continue; // drop this datagram and go to next datagram
-      } 
+      if (datagram.header.ttl <= 1) {
+        continue;
+      }
+      datagram.header.ttl -= 1;
+      datagram.header.compute_checksum();
       const Route* match = nullptr;
 
       // Loop through all potential routes and find longest prefix match
       for(const auto &route: routes){
         bool has_route_match = true;
-        if(route.prefix_length == 0){
+        if(route.prefix_length == 0){ // prevent >> 32 
           has_route_match = true;
         }
         else{
@@ -65,6 +66,11 @@ void Router::route()
       if(match == nullptr){
         continue;
       }
+      // std::cerr << "Routing packet: src=" << Address::from_ipv4_numeric(datagram.header.src).ip()
+      //     << " dst=" << Address::from_ipv4_numeric(datagram.header.dst).ip()
+      //     << " next_hop=" << match->next_hop.value().ip()
+      //     << " interface=" << match->interface_num
+      //     << " TTL=" << (int)datagram.header.ttl << "\n";
       if(match->next_hop.has_value()){
         interface(match->interface_num)->send_datagram(datagram,match->next_hop.value());
       }

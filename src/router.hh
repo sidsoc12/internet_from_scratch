@@ -43,5 +43,5 @@ private:
     size_t interface_num;
   };
   // vector of routes
-  std::vector<Route> routes;
+  std::vector<Route> routes = {};
 };
