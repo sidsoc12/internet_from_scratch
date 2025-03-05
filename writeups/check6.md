@@ -9,7 +9,7 @@ I collaborated with: [list sunetids here]
 
 I would like to thank/reward these classmates for their help: 
 
-This checkpoint took me about [n] hours to do. I [did/did not] attend the lab session.
+This checkpoint took me about 3 hours to do. I did attend the lab session.
 
 Program Structure and Design of the Router [Describe data
 structures and approach taken. Describe alternative designs considered
@@ -23,7 +23,7 @@ For the router implementation, I decided to use a simple array-based approach (w
 
 To make the longest prefix match as efficient as possible, I sort the vector of routes in descending order by prefix length every time a new route is added. This ensures that when I loop through the routes in route(), the first match I find is always the best match. Sorting happens in O(N log N) time , but that’s only done once per new route, not per packet, so it doesn’t really impact the core routing performance.
 
-For actually matching a route to a destination IP, I implemented a bit-by-bit comparison. Instead of using what could have been a more complicated but stylish bit masking trick, I just looped through the first prefix_length bits of both the route prefix and the destination IP, checking each bit one at a time using (num >> i) & 1. If any bit didn’t match, I immediately broke out of the loop and moved on to the next route. This is technically O(32) = O(1) per route since we only compare at most 32 bits, but since we loop through up to N routes, the worst case is O(N) per packet. That’s still reasonable given the problem constraints.
+For matching a route to a destination IP, I implemented a bit-by-bit comparison. Instead of using what could have been a more complicated but stylish bit masking trick, I just looped through the first prefix_length bits of both the route prefix and the destination IP, checking each bit one at a time using (num >> i) & 1. If any bit didn’t match, I immediately broke out of the loop and moved on to the next route. This is technically O(32) = O(1) per route since we only compare at most 32 bits, but since we loop through up to N routes, the worst case is O(N) per packet. That’s still reasonable given the problem constraints.
 
 I considered using a prefix tree to make lookup O(1) per packet, but that would have added a lot of complexity, and debugging would have been harder. The array approach is brute-force but reliable, and it makes debugging easier because I can just print out the routing table and step through it logically. 
 
