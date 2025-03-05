@@ -27,26 +27,34 @@ void Router::add_route( const uint32_t route_prefix,
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
+  if(routes.empty()){ // check if routing table is empty
+    return;
+  }
   // loop through the router's interfaces 
   for (auto &intr: interfaces_){
-    std::queue<InternetDatagram> queue = intr->datagrams_received();
+    std::queue<InternetDatagram> &queue = intr->datagrams_received();
     while(!queue.empty()){ // go through all the datagrams in the queue
       InternetDatagram datagram = queue.front();
       queue.pop();
-      if(datagram.header.ttl == 0 || datagram.header.ttl - 1 == 0){
+      datagram.header.ttl--;
+      if(datagram.header.ttl <= 0){
         continue; // drop this datagram and go to next datagram
       } 
-      
       const Route* match = nullptr;
 
       // Loop through all potential routes and find longest prefix match
       for(const auto &route: routes){
         bool has_route_match = true;
-        for(int i = 31; i >= 32 - route.prefix_length; i--){
+        if(route.prefix_length == 0){
+          has_route_match = true;
+        }
+        else{
+          for(int i = 31; i >= 32 - route.prefix_length; i--){
           // Bit by Bit comparison until prefix_length 
           if(((route.prefix >> i) & 1 ) !=  ((datagram.header.dst >> i) & 1)){
             has_route_match = false;
             break;
+          }
           }
         }
         if(has_route_match){
@@ -57,8 +65,12 @@ void Router::route()
       if(match == nullptr){
         continue;
       }
-      
-
+      if(match->next_hop.has_value()){
+        interface(match->interface_num)->send_datagram(datagram,match->next_hop.value());
+      }
+      else{
+        interface(match->interface_num)->send_datagram(datagram,Address::from_ipv4_numeric(datagram.header.dst));
+      }
     }
   }
 }
