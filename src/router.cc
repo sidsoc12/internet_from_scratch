@@ -17,26 +17,27 @@ void Router::add_route( const uint32_t route_prefix,
                         const optional<Address> next_hop,
                         const size_t interface_num )
 {
-  routes.push_back({route_prefix, prefix_length, next_hop, interface_num});
+  routes.push_back( { route_prefix, prefix_length, next_hop, interface_num } );
   // sort the routes based on prefix_length
-  std::sort(routes.begin(), routes.end(), [](const Route &a, const Route &b) { // sort based on higher prefix length
-        return a.prefix_length > b.prefix_length;  
-  });
+  std::sort(
+    routes.begin(), routes.end(), []( const Route& a, const Route& b ) { // sort based on higher prefix length
+      return a.prefix_length > b.prefix_length;
+    } );
 }
 
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  if(routes.empty()){ // check if routing table is empty
+  if ( routes.empty() ) { // check if routing table is empty
     return;
   }
-  // loop through the router's interfaces 
-  for (auto &intr: interfaces_){
-    std::queue<InternetDatagram> &queue = intr->datagrams_received();
-    while(!queue.empty()){ // go through all the datagrams in the queue
+  // loop through the router's interfaces
+  for ( auto& intr : interfaces_ ) {
+    std::queue<InternetDatagram>& queue = intr->datagrams_received();
+    while ( !queue.empty() ) { // go through all the datagrams in the queue
       InternetDatagram datagram = queue.front();
       queue.pop();
-      if (datagram.header.ttl <= 1) { // check ttl 
+      if ( datagram.header.ttl <= 1 ) { // check ttl
         continue;
       }
       datagram.header.ttl -= 1;
@@ -44,38 +45,32 @@ void Router::route()
       const Route* match = nullptr;
 
       // Loop through all potential routes and find longest prefix match
-      for(const auto &route: routes){
+      for ( const auto& route : routes ) {
         bool has_route_match = true;
-        if(route.prefix_length == 0){ // prevent >> 32 
+        if ( route.prefix_length == 0 ) { // prevent >> 32
           has_route_match = true;
-        }
-        else{
-          for(int i = 31; i >= 32 - route.prefix_length; i--){
-          // Bit by Bit comparison until prefix_length 
-          if(((route.prefix >> i) & 1 ) !=  ((datagram.header.dst >> i) & 1)){
-            has_route_match = false;
-            break;
+        } else {
+          for ( int i = 31; i >= 32 - route.prefix_length; i-- ) {
+            // Bit by Bit comparison until prefix_length
+            if ( ( ( route.prefix >> i ) & 1 ) != ( ( datagram.header.dst >> i ) & 1 ) ) {
+              has_route_match = false;
+              break;
+            }
           }
-          }
         }
-        if(has_route_match){
+        if ( has_route_match ) {
           match = &route;
           break; // since list is sorted, first match is best match
         }
       }
-      if(match == nullptr){
+      if ( match == nullptr ) {
         continue;
       }
-      // std::cerr << "Routing packet: src=" << Address::from_ipv4_numeric(datagram.header.src).ip()
-      //     << " dst=" << Address::from_ipv4_numeric(datagram.header.dst).ip()
-      //     << " next_hop=" << match->next_hop.value().ip()
-      //     << " interface=" << match->interface_num
-      //     << " TTL=" << (int)datagram.header.ttl << "\n";
-      if(match->next_hop.has_value()){
-        interface(match->interface_num)->send_datagram(datagram,match->next_hop.value());
-      }
-      else{
-        interface(match->interface_num)->send_datagram(datagram,Address::from_ipv4_numeric(datagram.header.dst));
+      if ( match->next_hop.has_value() ) {
+        interface( match->interface_num )->send_datagram( datagram, match->next_hop.value() );
+      } else {
+        interface( match->interface_num )
+          ->send_datagram( datagram, Address::from_ipv4_numeric( datagram.header.dst ) );
       }
     }
   }
