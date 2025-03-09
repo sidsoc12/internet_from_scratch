@@ -1,9 +1,9 @@
 Checkpoint 7 Writeup
 ====================
 
-My name: [your name here]
+My name: Sid Potti
 
-My SUNet ID: [your sunetid here]
+My SUNet ID: sidpotti
 
 I collaborated with: [list sunetids here]
 
