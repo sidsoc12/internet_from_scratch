@@ -6,11 +6,22 @@ using namespace std;
 
 void TCPReceiver::receive( TCPSenderMessage message )
 {
+  
+
   if ( message.RST ) { // handle RST
     rst = true;
     reader().set_error(); // set error
     return;
   }
+
+  if (reassembler_.writer().is_closed()) {
+    if (message.FIN || !message.payload.empty()) {
+      std::cerr << "stream already closed — ignoring segment at seq "
+                << message.seqno.unwrap(*ISN, checkpoint) << std::endl;
+    }
+    return;
+  }
+ 
   if ( !received_SYN && message.SYN ) { // Check if there is a start sequence
     ISN = message.seqno;
     received_SYN = true;
@@ -33,14 +44,17 @@ void TCPReceiver::receive( TCPSenderMessage message )
   uint64_t reassembler_index = ( message.SYN ? 0 : absolute_seqn - 1 );
   // insert into reassembler
   // Debugging prints
+  if (message.FIN) {
+    std::cerr << "[receiver] Received FIN at absolute seq = " << absolute_seqn << std::endl;
+  }
   std::cout << "Absolute Seq: " << absolute_seqn << ", Reassembler Index: " << reassembler_index
             << ", FIN: " << message.FIN << ", Payload Size: " << message.payload.size() << std::endl;
   reassembler_.insert( reassembler_index, message.payload, message.FIN );
   checkpoint = reassembler_index + message.payload.size();
   // FIN without payload should NOT increment checkpoint
-  if ( message.FIN && message.payload.empty() && !message.SYN ) {
-    checkpoint -= 1;
-  }
+  // if ( message.FIN && message.payload.empty() && !message.SYN ) {
+  //   checkpoint -= 1;
+  // }
   ackno = *ISN + reassembler_.writer().bytes_pushed() + 1;
   if ( reassembler_.writer().is_closed() ) {
     ackno = Wrap32( *ackno + 1 ); // FIN should only increase ackno when it can be assembled

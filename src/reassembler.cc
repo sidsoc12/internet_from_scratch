@@ -4,6 +4,7 @@
 #include <numeric>
 #include <optional>
 
+
 using namespace std;
 
 void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring )
@@ -143,6 +144,8 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 
   buf_.resize( writer().available_capacity() );
   occupancy_.resize( writer().available_capacity() );
+
+
 
   auto first_unassembled = writer().bytes_pushed();
   auto first_unacceptable = first_unassembled + writer().available_capacity();

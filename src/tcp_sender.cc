@@ -1,6 +1,7 @@
 #include "tcp_sender.hh"
 #include "debug.hh"
 #include "tcp_config.hh"
+#include <iostream>
 
 using namespace std;
 
@@ -51,6 +52,7 @@ void TCPSender::push( const TransmitFunction& transmit )
     if ( reader().is_finished() && available_window_size > init_msg.sequence_length() ) {
       init_msg.FIN = true;
       fin_set = true;
+      std::cerr << "[sender] Sending FIN at seqno = " << next_seqno << std::endl;
     }
     transmit( init_msg );
     next_seqno += init_msg.sequence_length();
@@ -112,6 +114,7 @@ void TCPSender::push( const TransmitFunction& transmit )
   }
   if ( fin_ready_ && !fin_set ) { // send fin flag if probe got acknowed and fin flag can be sent
     TCPSenderMessage fin_msg;
+    std::cerr << "[sender] Sending FIN at seqno = " << next_seqno << std::endl;
     fin_msg.seqno = isn_.wrap( next_seqno, isn_ );
     fin_msg.FIN = true;
     transmit( fin_msg );
