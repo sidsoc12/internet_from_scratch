@@ -5,7 +5,7 @@ My name: Sid Potti
 
 My SUNet ID: sidpotti
 
-I collaborated with: asher
+I collaborated with: asher104
 
 I would like to thank/reward these classmates for their help: [list sunetids here]
 
